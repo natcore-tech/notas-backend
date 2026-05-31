@@ -1,0 +1,26 @@
+# Acceder a la consola de PostgreSQL
+sudo -u postgres psql          # Linux / macOS
+# En Windows: abrir pgAdmin o usar la consola psql desde el menú de inicio
+
+# Dentro de la consola psql
+CREATE USER notas_user WITH PASSWORD 'notas_pass';
+CREATE DATABASE notas_db OWNER notas_user;
+GRANT ALL PRIVILEGES ON DATABASE notas_db TO notas_user;
+\q
+
+
+uv add django djangorestframework djangorestframework-simplejwt django-filter django-cors-headers 
+psycopg2-binary python-decouple
+
+
+New-Item -ItemType Directory -Force notas\models, notas\serializers, notas\views, store\tests
+
+$files = @(
+    "notas\models\__init__.py",
+    "notas\serializers\__init__.py",
+    "notas\views\__init__.py",
+    "notas\tests\__init__.py",
+    "notas\filters.py",
+    "notas\permissions.py"
+)
+$files | ForEach-Object { New-Item -ItemType File -Force $_ }
