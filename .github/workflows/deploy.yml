@@ -1,0 +1,63 @@
+name: CI/CD Notas Backend
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  # ── Job 1: Pruebas en la nube de GitHub ──
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest # Aprovechamos las máquinas gratuitas de GitHub
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12 # Cambia esto si usas otra versión
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        # Aquí puedes agregar variables de entorno temporales si tus tests las necesitan
+        run: uv run python manage.py test notas --verbosity=2
+
+  # ── Job 2: Despliegue en tu servidor i3 ──
+  deploy:
+    name: Deploy to Local i3
+    needs: test # ¡Solo se ejecuta si el Job 1 pasa sin errores!
+    runs-on: self-hosted # Esto le dice a GitHub que busque tu máquina en casa
+
+    steps:
+      - name: Deploy to Server
+        env:
+          # Cambia esto por la ruta real de tu proyecto en el i3
+          DEPLOY_PATH: /opt/notas-backend
+        run: |
+          set -e
+          echo "── 1. Actualizando código ──"
+          cd $DEPLOY_PATH
+          git fetch origin
+          git reset --hard origin/master
+
+          echo "── 2. Instalando dependencias ──"
+          uv sync --frozen
+
+          echo "── 3. Aplicando migraciones ──"
+          uv run python manage.py migrate --noinput
+
+          echo "── 4. Recolectando estáticos ──"
+          uv run python manage.py collectstatic --noinput --clear
+
+          echo "── 5. Reiniciando servicios ──"
+          sudo systemctl restart gunicorn-notas # Asegúrate que este nombre coincida con tu servicio
+          sudo systemctl restart nginx
+
+          echo "¡Despliegue local completado exitosamente!"
