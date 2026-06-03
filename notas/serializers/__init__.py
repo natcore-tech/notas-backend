@@ -6,6 +6,8 @@ from .user    import (
     UserProfileSerializer,
     ChangePasswordSerializer,
 )
-from .category import CategorySerializer
-from .product  import ProductSerializer, ProductSummarySerializer
-from .order    import OrderSerializer, OrderItemSerializer, AddItemSerializer
+from .period import AcademicPeriodSerializer
+from .course import CourseSerializer
+from .student import StudentSerializer
+from .enrollment import EnrollmentSerializer
+from .grade import GradeSerializer

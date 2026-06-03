@@ -1,6 +1,9 @@
 # notas/models/__init__.py
-from .category import Category
-from .product  import Product
-from .order    import Order, OrderItem
+from .period import AcademicPeriod
+from .course import Course
+from .student import Student
+from .enrollment import Enrollment
+from .grade import Grade
 
-__all__ = ['Category', 'Product', 'Order', 'OrderItem']
+# Mantienes el de user si creaste algo personalizado, 
+# pero la autenticación base la sigue manejando django.contrib.auth.models.User

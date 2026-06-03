@@ -1,4 +1,4 @@
-# notas/serializers/user.py — actualizar UserSerializer
+# notas/serializers/user.py
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
@@ -30,18 +30,13 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    num_orders = serializers.SerializerMethodField()
-
     class Meta:
         model  = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'is_staff', 'is_active', 'date_joined', 'num_orders',
+            'is_staff', 'is_active', 'date_joined',
         ]
         read_only_fields = ['id', 'date_joined']
-
-    def get_num_orders(self, obj):
-        return obj.orders.count()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

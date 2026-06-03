@@ -1,34 +1,38 @@
 # notas/admin.py
 from django.contrib import admin
-from notas.models import Category, Product, Order, OrderItem
+from notas.models import AcademicPeriod, Course, Student, Enrollment, Grade
 
+@admin.register(AcademicPeriod)
+class AcademicPeriodAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'name', 'start_date', 'end_date', 'is_active']
+    list_filter   = ['is_active']
+    search_fields = ['name']
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display        = ['id', 'name', 'slug', 'is_active', 'created_at']
-    list_filter         = ['is_active']
-    search_fields       = ['name']
-    prepopulated_fields = {'slug': ('name',)}
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display  = ['id', 'name', 'price', 'stock', 'is_active', 'category']
-    list_filter   = ['is_active', 'category']
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'name', 'credits', 'is_active']
+    list_filter   = ['is_active']
     search_fields = ['name', 'description']
-    list_editable = ['price', 'stock', 'is_active']
 
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user', 'enrollment_number']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'enrollment_number']
 
-class OrderItemInline(admin.TabularInline):
-    model  = OrderItem
+class GradeInline(admin.TabularInline):
+    model  = Grade
     extra  = 0
-    fields = ['product', 'quantity', 'unit_price']
+    fields = ['evaluation_type', 'score', 'observations']
 
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'student', 'course', 'period', 'created_at']
+    list_filter   = ['period', 'course']
+    search_fields = ['student__user__username', 'student__enrollment_number', 'course__name']
+    inlines       = [GradeInline]
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display    = ['id', 'user', 'status', 'total', 'created_at']
-    list_filter     = ['status']
-    search_fields   = ['user__username']
-    inlines         = [OrderItemInline]
-    readonly_fields = ['total', 'created_at', 'updated_at']
+@admin.register(Grade)
+class GradeAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'enrollment', 'evaluation_type', 'score', 'created_at']
+    list_filter   = ['evaluation_type', 'enrollment__course']
+    search_fields = ['enrollment__student__user__username', 'enrollment__student__enrollment_number']

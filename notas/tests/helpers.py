@@ -2,9 +2,9 @@
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import date
 
-from notas.models import Category, Product, Order, OrderItem
-
+from notas.models import AcademicPeriod, Course, Student, Enrollment, Grade
 
 def create_user(username='user', email=None, password='Pass1234!', **kwargs):
     email = email or f'{username}@test.com'
@@ -12,18 +12,15 @@ def create_user(username='user', email=None, password='Pass1234!', **kwargs):
         username=username, email=email, password=password, **kwargs
     )
 
-
 def create_staff(username='staff', email=None, password='Admin1234!'):
     email = email or f'{username}@test.com'
     return User.objects.create_user(
         username=username, email=email, password=password, is_staff=True
     )
 
-
 def get_tokens(user):
     refresh = RefreshToken.for_user(user)
     return str(refresh.access_token), str(refresh)
-
 
 def auth_client(user):
     client = APIClient()
@@ -31,30 +28,21 @@ def auth_client(user):
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
     return client
 
-
-def create_category(name='Electronics', slug='electronics', is_active=True):
-    return Category.objects.create(name=name, slug=slug, is_active=is_active)
-
-
-def create_product(name='Laptop', price=850, stock=10, category=None, is_active=True):
-    if category is None:
-        category = create_category()
-    return Product.objects.create(
-        name=name, price=price,
-        stock=stock, category=category, is_active=is_active,
+def create_period(name='2026-A', is_active=True):
+    return AcademicPeriod.objects.create(
+        name=name, start_date=date(2026, 4, 1), end_date=date(2026, 8, 31), is_active=is_active
     )
 
+def create_course(name='Bases de Datos', credits=4, is_active=True):
+    return Course.objects.create(name=name, credits=credits, is_active=is_active)
 
-def create_order(user, status='pending'):
-    return Order.objects.create(user=user, status=status)
+def create_student(user, enrollment_number='UTE-001'):
+    return Student.objects.create(user=user, enrollment_number=enrollment_number)
 
+def create_enrollment(student, course, period):
+    return Enrollment.objects.create(student=student, course=course, period=period)
 
-def add_item(order, product=None, quantity=1):
-    if product is None:
-        product = create_product()
-    return OrderItem.objects.create(
-        order=order,
-        product=product,
-        quantity=quantity,
-        unit_price=product.price,
+def create_grade(enrollment, evaluation_type='parcial_1', score=18.50):
+    return Grade.objects.create(
+        enrollment=enrollment, evaluation_type=evaluation_type, score=score
     )
