@@ -8,7 +8,23 @@ jobs:
   # ── Job 1: Pruebas en la nube de GitHub ──
   test:
     name: Run Tests
-    runs-on: ubuntu-latest # Aprovechamos las máquinas gratuitas de GitHub
+    runs-on: ubuntu-latest
+
+    # 1. Levantamos el Postgres temporal inyectando TUS secretos
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -20,31 +36,40 @@ jobs:
           version: "latest"
 
       - name: Set up Python
-        run: uv python install 3.12 # Cambia esto si usas otra versión
+        run: uv python install 3.12 
 
       - name: Install dependencies
         run: uv sync
 
+      # 2. Django lee los mismos secretos para conectarse
       - name: Run tests
-        # Aquí puedes agregar variables de entorno temporales si tus tests las necesitan
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: True
+          ALLOWED_HOSTS: "*"
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: "localhost" 
+          DB_PORT: "5432"
         run: uv run python manage.py test notas --verbosity=2
 
-  # ── Job 2: Despliegue en tu servidor i3 ──
+  # ── Job 2: Despliegue en servidor i3 ──
   deploy:
     name: Deploy to Local i3
-    needs: test # ¡Solo se ejecuta si el Job 1 pasa sin errores!
-    runs-on: self-hosted # Esto le dice a GitHub que busque tu máquina en casa
+    needs: test 
+    runs-on: self-hosted 
 
     steps:
       - name: Deploy to Server
         env:
-          # Cambia esto por la ruta real de tu proyecto en el i3
           DEPLOY_PATH: /opt/notas-backend
         run: |
           set -e
           echo "── 1. Actualizando código ──"
           cd $DEPLOY_PATH
           git fetch origin
+          # OJO: Si tu rama principal se llama "main", cambia "master" por "main" en la siguiente línea
           git reset --hard origin/master
 
           echo "── 2. Instalando dependencias ──"
@@ -57,7 +82,7 @@ jobs:
           uv run python manage.py collectstatic --noinput --clear
 
           echo "── 5. Reiniciando servicios ──"
-          sudo systemctl restart gunicorn-notas # Asegúrate que este nombre coincida con tu servicio
+          sudo systemctl restart gunicorn-notas 
           sudo systemctl restart nginx
 
           echo "¡Despliegue local completado exitosamente!"
