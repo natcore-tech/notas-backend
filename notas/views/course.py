@@ -9,7 +9,7 @@ from notas.permissions import IsStaffOrReadOnly
 from notas.pagination import StandardPagination
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.filter(is_active=True)
+    queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsStaffOrReadOnly]
     pagination_class = StandardPagination
